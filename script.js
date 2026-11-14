@@ -9,10 +9,19 @@
 
 const STORAGE_KEY = 'contaFacilTransactions';
 const CATEGORY_KEY = 'contaFacilSimpleCategories';
-const RESERVE_BUCKETS = ['IPVA/IPTU','Poupança','Investimento'];
+const RESERVE_BUCKETS = [
+  'Seguro Casa',
+  'Seguro Carro',
+  'IPVA Moto',
+  'IPVA Carro',
+  'Manutenção Carro',
+  'Poupança',
+  'Investimento',
+  'IPVA/IPTU' // Mantido para compatibilidade com registros antigos.
+];
 const COLORS = ['#176b4a','#e0a33b','#4f83b8','#bd554d','#8a6bb1','#299b9b','#d17b45','#718b50','#cb6b91','#68747d','#a18b56','#597c9e'];
 const defaultCategories = {
-  expense: ['Alimentação','Supermercado','Moradia','Água','Energia elétrica','Internet e telefone','Transporte','Combustível','Saúde','Farmácia','Educação','Lazer','Assinaturas','Cartão de crédito','Impostos','IPVA','IPTU','Outras despesas'],
+  expense: ['Mercado','Água','Luz','Internet Casa','Internet Praia','Celular Mãe','Celular Eu','Antena','Escola','Hipercard','Uber','Inglês','Ração','Mesada'],
   income: ['Salário','Aposentadoria','Renda extra','Serviços','Vendas','Rendimentos','Outras receitas']
 };
 
@@ -108,13 +117,27 @@ function renderCategoryOptions() {
   if ([...select.options].some(o => o.value === previous)) select.value = previous;
 
   const paymentWrap = $('paymentSourceWrap');
+  const paymentSelect = $('paymentSource');
+  const previousPayment = paymentSelect.value;
+  paymentSelect.replaceChildren();
+  const cashOption = document.createElement('option');
+  cashOption.value = 'cash';
+  cashOption.textContent = 'Saldo disponível';
+  paymentSelect.append(cashOption);
+  RESERVE_BUCKETS.forEach(bucket => {
+    const option = document.createElement('option');
+    option.value = bucket;
+    option.textContent = `Reserva: ${bucket}`;
+    paymentSelect.append(option);
+  });
+  if ([...paymentSelect.options].some(option => option.value === previousPayment)) paymentSelect.value = previousPayment;
   paymentWrap.hidden = type !== 'expense';
   $('categoryForm').hidden = !['income','expense'].includes(type);
   const hint = $('typeHint');
   const hints = {
-    expense: 'Despesa: reduz o saldo disponível. Se pagar usando IPVA/IPTU, poupança ou investimento já separado, escolha essa origem para não descontar duas vezes.',
+    expense: 'Despesa: reduz o saldo disponível. Se pagar usando uma reserva já separada, escolha essa origem para não descontar duas vezes.',
     income: 'Receita: aumenta o dinheiro disponível e pode gerar lucro para o mês seguinte.',
-    allocation: 'Separar dinheiro: transfere parte do saldo disponível para IPVA/IPTU, poupança ou investimentos. Não é uma despesa.',
+    allocation: 'Separar dinheiro: transfere parte do saldo disponível para uma finalidade de reserva. Não é uma despesa.',
     withdrawal: 'Resgatar valor separado: devolve dinheiro de uma reserva ao saldo disponível. Não é receita.'
   };
   hint.textContent = hints[type] || '';
@@ -163,7 +186,7 @@ function monthlyTotals(month) {
   let incomeCents = 0;
   let expenseCents = 0;
   let cashExpenseCents = 0;
-  let allocationCents = { 'IPVA/IPTU':0, 'Poupança':0, 'Investimento':0 };
+  let allocationCents = Object.fromEntries(RESERVE_BUCKETS.map(bucket => [bucket, 0]));
   let withdrawalCents = 0;
   transactions.forEach(item => {
     if (item.date.slice(0,7) !== month) return;
@@ -258,18 +281,38 @@ function getSelectedMonthBalance() {
   };
 }
 
+
+function renderReserveCards(containerId, month, reportMode, monthAllocations = null) {
+  const container = $(containerId);
+  if (!container) return;
+  container.replaceChildren();
+  RESERVE_BUCKETS.filter(bucket => bucket !== 'IPVA/IPTU').forEach(bucket => {
+    const card = document.createElement('article');
+    card.className = 'reserve-card';
+    const name = document.createElement('span');
+    name.textContent = bucket.toLocaleUpperCase('pt-BR');
+    const balance = document.createElement('strong');
+    const value = reportMode
+      ? ((monthAllocations && monthAllocations[bucket]) || 0) / 100
+      : monthReserveBalance(bucket, month);
+    balance.textContent = money(value);
+    const note = document.createElement('small');
+    note.textContent = reportMode
+      ? 'Separado neste mês'
+      : `Separado neste mês: ${money(monthlyTotals(month).allocationCents[bucket] / 100)}`;
+    card.append(name, balance, note);
+    container.append(card);
+  });
+}
+
 function updateSummary() {
   const {income, expenses, carry, balance, allocations} = getSelectedMonthBalance();
   $('carryTotal').textContent = money(carry);
   $('incomeTotal').textContent = money(income);
   $('expenseTotal').textContent = money(expenses);
   $('balanceTotal').textContent = money(balance);
-  $('ipvaBalance').textContent = money(monthReserveBalance('IPVA/IPTU', selectedEntryMonth));
-  $('savingBalance').textContent = money(monthReserveBalance('Poupança', selectedEntryMonth));
-  $('investmentBalance').textContent = money(monthReserveBalance('Investimento', selectedEntryMonth));
-  $('ipvaMonth').textContent = `Separado neste mês: ${money(allocations['IPVA/IPTU'])}`;
-  $('savingMonth').textContent = `Separado neste mês: ${money(allocations['Poupança'])}`;
-  $('investmentMonth').textContent = `Destinado neste mês: ${money(allocations['Investimento'])}`;
+  renderReserveCards('reserveCards', selectedEntryMonth, false);
+
 }
 
 function createTransactionRow(item) {
@@ -396,9 +439,7 @@ function renderCategoryChips() {
 function renderMonthlyChart() {
   const selected = $('monthPicker').value || monthISO();
   const totals = monthlyTotals(selected);
-  $('reportIpva').textContent = money(totals.allocationCents['IPVA/IPTU'] / 100);
-  $('reportSaving').textContent = money(totals.allocationCents['Poupança'] / 100);
-  $('reportInvestment').textContent = money(totals.allocationCents['Investimento'] / 100);
+  renderReserveCards('reportReserveCards', selected, true, totals.allocationCents);
   const sums = new Map();
   transactions.filter(t => t.date.startsWith(selected) && t.type === 'expense').forEach(item => {
     const name = item.category || 'Outros';

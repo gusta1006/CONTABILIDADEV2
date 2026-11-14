@@ -53,3 +53,9 @@
 .transaction-value.allocation{color:#a17726}
 .report-reserve-grid{margin-top:18px}
 @media(max-width:700px){.reserve-grid{grid-template-columns:1fr}.reserve-card{padding:13px}.report-reserve-grid{margin-top:12px}}
+
+/* Categorias personalizadas para o controle familiar e reservas individuais. */
+.reserve-grid-many{grid-template-columns:repeat(3,minmax(0,1fr))}
+.reserve-grid-many .reserve-card{min-height:104px}
+@media(max-width:700px){.reserve-grid-many{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){.reserve-grid-many{grid-template-columns:1fr}}

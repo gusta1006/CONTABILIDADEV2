@@ -44,12 +44,8 @@
         <p class="carry-explanation">O <strong>Lucro</strong> é o saldo positivo que sobrou dos meses anteriores. Ele aparece automaticamente no mês seguinte e entra no saldo disponível, sem ser contado novamente como receita.</p>
 
         <section class="panel reserve-panel" aria-label="Saldos separados por finalidade">
-          <div class="panel-title"><div><p class="eyebrow">DINHEIRO SEPARADO</p><h2>Reservas, poupança e investimentos</h2><p class="muted">Esses valores não entram nas despesas comuns. Ao pagar uma conta com uma reserva, selecione a origem do pagamento para evitar desconto em duplicidade.</p></div></div>
-          <div class="reserve-grid">
-            <article class="reserve-card"><span>IPVA / IPTU</span><strong id="ipvaBalance">R$ 0,00</strong><small id="ipvaMonth">Separado neste mês: R$ 0,00</small></article>
-            <article class="reserve-card"><span>POUPANÇA</span><strong id="savingBalance">R$ 0,00</strong><small id="savingMonth">Separado neste mês: R$ 0,00</small></article>
-            <article class="reserve-card"><span>INVESTIMENTOS</span><strong id="investmentBalance">R$ 0,00</strong><small id="investmentMonth">Destinado neste mês: R$ 0,00</small></article>
-          </div>
+          <div class="panel-title"><div><p class="eyebrow">DINHEIRO SEPARADO</p><h2>Reservas, poupança e investimentos</h2><p class="muted">Cada finalidade tem seu próprio saldo. Ao pagar uma conta com uma reserva, selecione a origem do pagamento para evitar desconto em duplicidade.</p></div></div>
+          <div class="reserve-grid reserve-grid-many" id="reserveCards" aria-live="polite"></div>
         </section>
 
         <section class="panel">
@@ -68,9 +64,6 @@
               <label class="wide" id="paymentSourceWrap" hidden>Origem do pagamento
                 <select id="paymentSource">
                   <option value="cash">Saldo disponível</option>
-                  <option value="IPVA/IPTU">Reserva IPVA/IPTU</option>
-                  <option value="Poupança">Poupança</option>
-                  <option value="Investimento">Investimento</option>
                 </select>
               </label>
               <p id="typeHint" class="form-note wide" aria-live="polite">A despesa reduz o saldo disponível.</p>
@@ -112,11 +105,7 @@
 
         <section class="panel report-panel">
           <div class="report-title"><div><p class="eyebrow">DESTINAÇÃO DO DINHEIRO</p><h3>Reservas e aportes do mês</h3><p class="muted">Valores separados no mês selecionado, sem misturá-los às despesas.</p></div></div>
-          <div class="reserve-grid report-reserve-grid">
-            <article class="reserve-card"><span>IPVA / IPTU</span><strong id="reportIpva">R$ 0,00</strong><small>Separado no mês</small></article>
-            <article class="reserve-card"><span>POUPANÇA</span><strong id="reportSaving">R$ 0,00</strong><small>Separado no mês</small></article>
-            <article class="reserve-card"><span>INVESTIMENTOS</span><strong id="reportInvestment">R$ 0,00</strong><small>Destinado no mês</small></article>
-          </div>
+          <div class="reserve-grid reserve-grid-many report-reserve-grid" id="reportReserveCards"></div>
         </section>
 
         <section class="panel report-panel">
